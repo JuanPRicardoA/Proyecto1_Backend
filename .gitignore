@@ -1,0 +1,27 @@
+# Carpeta node_modules
+node_modules
+
+# Archivos generados por el editor de código
+*.log
+*.swp
+*.swo
+*.bak
+.DS_Store
+
+# Archivos de configuración locales
+.env
+.env.*
+config/*.json
+
+# Archivos de respaldo
+backup/
+*.bak
+
+# Archivos de compilación y build
+dist/
+build/
+out/
+public/bundle.js
+
+# Dependencias de desarrollo
+devDependencies/
