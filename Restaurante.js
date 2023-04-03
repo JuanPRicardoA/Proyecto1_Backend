@@ -15,14 +15,15 @@ const restaurantSchema = mongoose.Schema({
             message: props => `${props.value} no es una categoría válida.`
         }
     },
-    //pedidos: { type: Number, default: 0 },
+    pedidos: { type: Number, default: 0 },
     productos: [
         {
             nombre: { type: String, required: true },
             categoria: { type: String, required: true }, //postres, entradas, fast food, etc
             precio: { type: Number, required: true },
         }
-    ]
+    ],
+    activo: { type: Boolean, default: true }
 }, { timestamps: true });
 
 

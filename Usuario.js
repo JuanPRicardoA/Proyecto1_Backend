@@ -14,10 +14,10 @@ const usuarioSchema = mongoose.Schema({
             validator: function (v) {
                 return roles.includes(v);
             },
-            message: props => `${props.value} no es un rol válido.`
+            message: props => `${props.value} no es un rol válido`
         }
-    }
-},
-    { timestamps: true });
+    },
+    activo: { type: Boolean, default: true }
+}, { timestamps: true });
 
 export default mongoose.model('Usuario', usuarioSchema);
