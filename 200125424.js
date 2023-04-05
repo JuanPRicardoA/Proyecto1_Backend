@@ -31,9 +31,12 @@ app.use('/usuarios', UsuarioRoutes);
 import RestauranteRoutes from './Restaurante/Restaurante.routes'
 app.use('/restaurantes', RestauranteRoutes)
 
+import ProductoRoutes from './Producto/Producto.routes'
+app.use('/restaurantes', ProductoRoutes)
+
 // Endpoint para 404
 app.use((req, res) => {
-  res.status(404).json({ message: 'No encontradp' });
+  res.status(404).json({ message: 'No encontrado' });
 });
 
 // Iniciar la aplicación

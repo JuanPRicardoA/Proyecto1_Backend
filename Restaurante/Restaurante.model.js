@@ -19,10 +19,13 @@ const restaurantSchema = mongoose.Schema({
     productos: [
         {
             nombre: { type: String, required: true },
-            categoria: { type: String, required: true }, //postres, entradas, fast food, etc
+            descripcion: { type: String, required: true },
             precio: { type: Number, required: true },
+            categoria: { type: String, required: true },
+            activo: { type: Boolean, default: true }
         }
     ],
+    categorias: [String],
     activo: { type: Boolean, default: true }
 }, { timestamps: true });
 

@@ -76,3 +76,16 @@ export async function deleteRestaurant(req, res) {
         res.status(500).json({ message: 'Error al inhabilitar restaurante.' });
     }
 }
+
+// Habilitar un restaurante según la _id proveída
+export async function enableRestaurant(req, res) {
+    try {
+        const { _id } = req.params;
+        const restaurante = await Restaurante.findByIdAndUpdate(_id, { activo: true }, { new: true });
+
+        if (!restaurante) return res.status(404).json({ message: 'El restaurante que se está buscando no existe.' });
+        res.status(200).json({ message: 'El restaurante fue habilitado.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error al habilitar restaurante.' });
+    }
+}

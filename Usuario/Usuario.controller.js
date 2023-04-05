@@ -68,3 +68,16 @@ export async function deleteUser(req, res) {
         res.status(500).json({ message: 'Error al inhabilitar usuario.' });
     }
 }
+
+//Habilitar un usuario según la _id proveída
+export async function enableUser(req, res) {
+    try {
+        const { _id } = req.params;
+        const user = await Usuario.findByIdAndUpdate(_id, { activo: true }, { new: true });
+
+        if (!user) return res.status(404).json({ message: 'El usuario que se está buscando no existe.' });
+        res.status(200).json({ message: 'El usuario fue habilitado.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error al habilitar usuario.' });
+    }
+} 

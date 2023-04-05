@@ -1,4 +1,4 @@
-import {createRestaurant, getRestaurantbyId, getRestaurantbyNameorCats, putRestaurant, deleteRestaurant} from './Restaurante.controller';
+import {createRestaurant, getRestaurantbyId, getRestaurantbyNameorCats, putRestaurant, deleteRestaurant, enableRestaurant} from './Restaurante.controller';
 import {Router} from 'express';
 const router = Router();
 
@@ -16,5 +16,8 @@ router.put('/:_id', putRestaurant );
 
 // Endpoint DELETE
 router.delete('/:_id', deleteRestaurant );
+
+// Endpoint PUT
+router.put('/habilitar/:_id', enableRestaurant );
 
 export default router;
