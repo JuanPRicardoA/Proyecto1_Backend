@@ -6,8 +6,8 @@ const productSchema = mongoose.Schema({
     precio: { type: Number, required: [true, "El precio es obligatorio."] },
     categoria: { type: String, required: [true, "La categoría del producto es obligatoria."] },
     activo: { type: Boolean, default: true },
-    nombreRestaurante: {type: String},
-    idRestaurante: {type: String}
+    nombreRestaurante: { type: String },
+    idRestaurante: { type: String }
 }, { timestamps: true });
 
 

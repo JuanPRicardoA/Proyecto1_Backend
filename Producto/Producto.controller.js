@@ -1,5 +1,6 @@
 import Producto from './Producto.model';
-import Restaurante from '../Restaurante/Restaurante.model'
+import Restaurante from '../Restaurante/Restaurante.model';
+import Usuario from '../Usuario/Usuario.model'
 
 // -------------------------------------- CRUD de productos ------------------------------------------------
 
@@ -7,7 +8,12 @@ import Restaurante from '../Restaurante/Restaurante.model'
 export async function createProduct(req, res) {
     try {
         const { _id } = req.params;
-        const { nombre, descripcion, precio, categoria } = req.body;
+        const { nombre, descripcion, precio, categoria, idAdministrador } = req.body;
+        const usuario = await Usuario.findById(idAdministrador);
+
+        if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede crear restaurantes.' });
+        if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede crear el restaurante, el usuario no tiene rol de Administrador.' });
 
         const restaurante = await Restaurante.findById(_id);
         if (!restaurante) return res.status(404).json({ message: 'Restaurante no encontrado.' });
@@ -24,7 +30,9 @@ export async function createProduct(req, res) {
             await restaurante.save();
         }
 
-        const prodexiste = restaurante.productos.find(prod => prod.nombre === producto.nombre);
+        const prodsbyID = await Producto.find({idRestaurante: idRestaurante});
+        const prodexiste = prodsbyID.find(prod => prod.nombre === nombre)
+
         if (!prodexiste) {
             restaurante.productos.push(producto);
             await restaurante.save();
@@ -58,7 +66,7 @@ export async function getProductById(req, res) {
     }
 }
 
-//Retorna datos de restaurantes  según la categoría y/o restaurante
+//Retorna datos de productos según la categoría y/o restaurante
 export async function getProductosByRestauranteCategoria(req, res) {
     try {
         const { nombreRestaurante, categoria } = req.query;

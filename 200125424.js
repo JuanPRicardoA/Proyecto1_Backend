@@ -34,6 +34,9 @@ app.use('/restaurantes', RestauranteRoutes)
 import ProductoRoutes from './Producto/Producto.routes'
 app.use('/restaurantes', ProductoRoutes)
 
+import PedidoRoutes from './Pedido/Pedido.routes'
+app.use('/restaurantes', PedidoRoutes)
+
 // Endpoint para 404
 app.use((req, res) => {
   res.status(404).json({ message: 'No encontrado' });

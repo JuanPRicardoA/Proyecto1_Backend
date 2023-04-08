@@ -1,12 +1,19 @@
 import Restaurante from './Restaurante.model';
+import Usuario from '../Usuario/Usuario.model'
 
 // -------------------------------------------- CRUD de restaurantes --------------------------------------------
 
 //Crear nuevo restaurante
 export async function createRestaurant(req, res) {
     try {
-        const { nombre, direccion, telefono, categoria } = req.body;
-        const restaurante = new Restaurante({ nombre, direccion, telefono, categoria })
+        const { nombre, direccion, telefono, categoria , idAdministrador} = req.body;
+
+        const usuario = await Usuario.findById(idAdministrador);
+        if(!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+        if(!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede crear restaurantes.' });
+        if(usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede crear el restaurante, el usuario no tiene rol de Administrador.' });
+
+        const restaurante = new Restaurante({ nombre, direccion, telefono, categoria , idAdministrador})
         const resultado = await restaurante.save();
         res.status(200).json(resultado);
     } catch (error) {
