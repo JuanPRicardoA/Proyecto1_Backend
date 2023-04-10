@@ -17,8 +17,8 @@ export async function createProduct(req, res) {
 
         const restaurante = await Restaurante.findById(_id);
         if (!restaurante) return res.status(404).json({ message: 'Restaurante no encontrado.' });
-
         if (!restaurante.activo) return res.status(403).json({ message: 'No se puede crear el producto, el restaurante no está activo.' });
+        if (restaurante.idAdministrador.toString() !== idAdministrador) return res.status(403).json({ message: 'No se puede crear el producto porque el usuario no es Administrador de este restaurante' });
 
         const nombreRestaurante = restaurante.nombre;
         const idRestaurante = restaurante._id;
@@ -30,7 +30,7 @@ export async function createProduct(req, res) {
             await restaurante.save();
         }
 
-        const prodsbyID = await Producto.find({idRestaurante: idRestaurante});
+        const prodsbyID = await Producto.find({ idRestaurante: idRestaurante });
         const prodexiste = prodsbyID.find(prod => prod.nombre === nombre)
 
         if (!prodexiste) {
@@ -92,12 +92,19 @@ export async function getProductosByRestauranteCategoria(req, res) {
 // Modificar los datos del producto según su _id
 export async function putProduct(req, res) {
     try {
-        const { categoria } = req.body;
+        const { categoria, idAdministrador } = req.body;
+
+        const usuario = await Usuario.findById(idAdministrador);
+        if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede modificar el producto.' });
+        if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede modificar el producto, el usuario no tiene rol de Administrador.' });
+
         const prod0 = await Producto.findById(req.params._id);
         if (!prod0.activo) return res.status(400).json({ message: 'El producto no está activo, no se puede modificar.' });
 
         const restaurante = await Restaurante.findById(prod0.idRestaurante);
         if (!restaurante.activo) return res.status(400).json({ message: 'El restaurante no está activo, no se puede modificar el producto.' });
+        if (restaurante.idAdministrador.toString() !== idAdministrador) return res.status(403).json({ message: 'No se puede modificar el producto porque el usuario no es Administrador de este restaurante' });
 
         if (categoria && !restaurante.categorias.includes(categoria)) return res.status(400).json({ message: 'La categoría proporcionada no es válida para este restaurante.' });
 
@@ -121,11 +128,19 @@ export async function putProduct(req, res) {
 export async function deleteProduct(req, res) {
     try {
         const { _id } = req.params;
+        const { idAdministrador } = req.body;
+
+        const usuario = await Usuario.findById(idAdministrador);
+        if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede inhabilitar el producto.' });
+        if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede inhabilitar el producto, el usuario no tiene rol de Administrador.' });
+
         const producto = await Producto.findByIdAndUpdate(_id, { activo: false }, { new: true });
 
         if (!producto) return res.status(404).json({ message: 'El producto que se está buscando no existe.' });
 
         const restaurante = await Restaurante.findById(producto.idRestaurante);
+        if (restaurante.idAdministrador.toString() !== idAdministrador) return res.status(403).json({ message: 'No se puede inhabilitar el producto porque el usuario no es Administrador de este restaurante' });
         const index = restaurante.productos.findIndex(p => p._id.toString() === req.params._id.toString());
         if (index >= 0) {
             restaurante.productos.splice(index, 1);
@@ -142,11 +157,19 @@ export async function deleteProduct(req, res) {
 export async function enableProduct(req, res) {
     try {
         const { _id } = req.params;
+        const { idAdministrador } = req.body;
+
+        const usuario = await Usuario.findById(idAdministrador);
+        if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede habilitar el producto.' });
+        if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede habilitar el producto, el usuario no tiene rol de Administrador.' });
+
         const producto = await Producto.findByIdAndUpdate(_id, { activo: true }, { new: true });
 
         if (!producto) return res.status(404).json({ message: 'El producto que se está buscando no existe.' });
 
         const restaurante = await Restaurante.findById(producto.idRestaurante);
+        if (restaurante.idAdministrador.toString() !== idAdministrador) return res.status(403).json({ message: 'No se puede habilitar el producto porque el usuario no es Administrador de este restaurante' });
         restaurante.productos.push(producto);
         await restaurante.save();
 

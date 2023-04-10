@@ -6,14 +6,19 @@ import Usuario from '../Usuario/Usuario.model'
 //Crear nuevo restaurante
 export async function createRestaurant(req, res) {
     try {
-        const { nombre, direccion, telefono, categoria , idAdministrador} = req.body;
+        const { nombre, direccion, telefono, categoria, idAdministrador } = req.body;
 
         const usuario = await Usuario.findById(idAdministrador);
-        if(!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
-        if(!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede crear restaurantes.' });
-        if(usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede crear el restaurante, el usuario no tiene rol de Administrador.' });
+        if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede crear restaurantes.' });
+        if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede crear el restaurante, el usuario no tiene rol de Administrador.' });
 
-        const restaurante = new Restaurante({ nombre, direccion, telefono, categoria , idAdministrador})
+        const restauranteExistente = await Restaurante.findOne({ nombre });
+        if (restauranteExistente) {
+            return res.status(400).json({ message: 'Ya existe un restaurante con este nombre.' });
+        }
+
+        const restaurante = new Restaurante({ nombre, direccion, telefono, categoria, idAdministrador });
         const resultado = await restaurante.save();
         res.status(200).json(resultado);
     } catch (error) {
@@ -56,9 +61,15 @@ export async function getRestaurantbyNameorCats(req, res) {
 const catgs = ['Comida ejecutiva', 'Comida rápida', 'Comida asiática', 'Comida vegana/vegetariana', 'Comida gourmet', 'Cafetería', 'Comida de mar'];
 export async function putRestaurant(req, res) {
     try {
-        const { catg } = req.body;
+        const { catg, idAdministrador } = req.body;
         const rest0 = await Restaurante.findById(req.params._id)
         if (!rest0.activo) return res.status(400).json({ message: 'El restaurante no está activo, no se puede modificar' });
+
+        const usuario = await Usuario.findById(idAdministrador);
+        if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede modificar el restaurante.' });
+        if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede modificar el restaurante, el usuario no tiene rol de Administrador.' });
+        if (rest0.idAdministrador.toString() !== idAdministrador) return res.status(403).json({ message: 'No se puede modificar el restaurante porque el usuario no es Administrador de este restaurante'});
 
         if (catg && !catgs.includes(catg)) return res.status(400).json({ message: 'Categoría no válida' });
 
@@ -75,6 +86,15 @@ export async function putRestaurant(req, res) {
 export async function deleteRestaurant(req, res) {
     try {
         const { _id } = req.params;
+        const { idAdministrador } = req.body;
+        const rest0 = await Restaurante.findById(_id)
+
+        const usuario = await Usuario.findById(idAdministrador);
+        if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede inhabilitar el restaurante.' });
+        if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede inhabilitar el restaurante, el usuario no tiene rol de Administrador.' });
+        if (rest0.idAdministrador.toString() !== idAdministrador) return res.status(403).json({ message: 'No se puede inhabilitar el restaurante porque el usuario no es Administrador de este restaurante'});
+
         const restaurante = await Restaurante.findByIdAndUpdate(_id, { activo: false }, { new: true });
 
         if (!restaurante) return res.status(404).json({ message: 'El restaurante que se está buscando no existe.' });
@@ -88,6 +108,15 @@ export async function deleteRestaurant(req, res) {
 export async function enableRestaurant(req, res) {
     try {
         const { _id } = req.params;
+        const { idAdministrador } = req.body;
+        const rest0 = await Restaurante.findById(_id)
+
+        const usuario = await Usuario.findById(idAdministrador);
+        if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede habilitar el restaurante.' });
+        if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede habilitar el restaurante, el usuario no tiene rol de Administrador.' });
+        if (rest0.idAdministrador.toString() !== idAdministrador) return res.status(403).json({ message: 'No se puede habilitar el restaurante porque el usuario no es Administrador de este restaurante'});
+
         const restaurante = await Restaurante.findByIdAndUpdate(_id, { activo: true }, { new: true });
 
         if (!restaurante) return res.status(404).json({ message: 'El restaurante que se está buscando no existe.' });

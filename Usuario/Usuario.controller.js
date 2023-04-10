@@ -6,7 +6,13 @@ import Usuario from './Usuario.model';
 export async function createUser(req, res) {
     try {
         const { nombre, email, contraseña, telefono, direccion, rol } = req.body;
-        const usuario = new Usuario({ nombre, email, contraseña, telefono, direccion, rol })
+
+        const usuarioExistente = await Usuario.findOne({ email });
+        if (usuarioExistente) {
+            return res.status(400).json({ message: 'El email ya está registrado.' });
+        }
+
+        const usuario = new Usuario({ nombre, email, contraseña, telefono, direccion, rol });
         const resultado = await usuario.save();
         res.status(200).json(resultado);
     } catch (error) {
