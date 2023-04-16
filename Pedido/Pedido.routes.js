@@ -1,23 +1,26 @@
-import { createPedido } from './Pedido.controller';
+import { createPedido, getPedidoById, getPedidos, getPedidosEnviados, putPedido, deletePedido, enablePedido } from './Pedido.controller';
 import { Router } from 'express';
 const router = Router();
 
 // Endpoint POST
 router.post('/:_id/pedidos', createPedido);
 
-// // Endpoint GET
-// router.get('/productos/:_id', getProductById);
+// Endpoint GET
+router.get('/pedidos/:_id', getPedidoById);
 
-// // Endpoint GET
-// router.get('/productos/get/restycat', getProductosByRestauranteCategoria);
+// Endpoint GET
+router.get('/pedidos/get/filtrosped', getPedidos);
 
-// // Endpoint PUT
-// router.put('/productos/:_id', putProduct);
+//Endpoint GET
+router.get('/pedidos/get/enviados', getPedidosEnviados);
 
-// // Endpoint DELETE
-// router.delete('/productos/:_id', deleteProduct);
+// Endpoint PUT
+router.put('/pedidos/:_id', putPedido);
 
-// // Endpoint PUT
-// router.put('/productos/habilitar/:_id', enableProduct);
+// Endpoint DELETE
+router.delete('/pedidos/:_id', deletePedido);
+
+// Endpoint PUT
+router.put('/pedidos/habilitar/:_id', enablePedido);
 
 export default router;

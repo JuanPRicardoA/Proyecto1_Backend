@@ -32,10 +32,10 @@ export async function getUser(req, res) {
         } else if (email && contraseña) {
             user = await Usuario.findOne({ email, contraseña, activo: true });
         } else {
-            throw new Error('No hay suficientes parámetros para buscar.');
+            return res.status(404).json({ message: 'No hay suficientes parámetros para buscar.' });
         }
 
-        if (!user) throw new Error('No se encontró el usuario o sus credenciales son inválidas.');
+        if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
         res.status(200).json(user);
     } catch (err) {

@@ -9,10 +9,10 @@ const pedidoSchema = mongoose.Schema({
     }],
     direccion: { type: String },
     estado: { type: String, default: 'Creado', enum: estados },
-    nombreRestaurante: { type: String },
     idRestaurante: { type: String },
-    nombreUsuario: { type: String },
     idUsuario: { type: String, required: [true, "El ID del usuario es obligatorio."] },
+    idDomiciliario: { type: String, default: "" },
+    valorTotal: { type: Number },
     activo: { type: Boolean, default: true }
 }, { timestamps: true });
 

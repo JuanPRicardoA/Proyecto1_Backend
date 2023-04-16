@@ -12,23 +12,16 @@ export async function createProduct(req, res) {
         const usuario = await Usuario.findById(idAdministrador);
 
         if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
-        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede crear restaurantes.' });
-        if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede crear el restaurante, el usuario no tiene rol de Administrador.' });
+        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede crear el producto.' });
+        if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede crear el producto, el usuario no tiene rol de Administrador.' });
 
         const restaurante = await Restaurante.findById(_id);
         if (!restaurante) return res.status(404).json({ message: 'Restaurante no encontrado.' });
         if (!restaurante.activo) return res.status(403).json({ message: 'No se puede crear el producto, el restaurante no está activo.' });
         if (restaurante.idAdministrador.toString() !== idAdministrador) return res.status(403).json({ message: 'No se puede crear el producto porque el usuario no es Administrador de este restaurante' });
 
-        const nombreRestaurante = restaurante.nombre;
         const idRestaurante = restaurante._id;
-        const producto = new Producto({ nombre, descripcion, precio, categoria, nombreRestaurante, idRestaurante });
-
-        const catexiste = restaurante.categorias.find(cat => cat === categoria);
-        if (!catexiste) {
-            restaurante.categorias.push(categoria);
-            await restaurante.save();
-        }
+        const producto = new Producto({ nombre, descripcion, precio, categoria, idRestaurante });
 
         const prodsbyID = await Producto.find({ idRestaurante: idRestaurante });
         const prodexiste = prodsbyID.find(prod => prod.nombre === nombre)
@@ -38,6 +31,12 @@ export async function createProduct(req, res) {
             await restaurante.save();
         } else {
             return res.status(403).json({ message: 'No se puede crear el producto porque ya existe.' })
+        } 
+
+        const catexiste = restaurante.categorias.find(cat => cat === categoria);
+        if (!catexiste) {
+            restaurante.categorias.push(categoria);
+            await restaurante.save();
         }
 
         const resultado = await producto.save();
@@ -57,7 +56,7 @@ export async function getProductById(req, res) {
 
         if (!producto) return res.status(404).json({ message: 'No se encontró producto con esa ID o está inhabilitado.' });
 
-        if (!restaurante.activo) return res.status(403).json({ message: 'No se puede crear el producto, el restaurante no está activo.' });
+        if (!restaurante.activo) return res.status(403).json({ message: 'No se puede encontrar el producto, el restaurante no está activo.' });
 
         res.status(200).json(producto);
     } catch (error) {
