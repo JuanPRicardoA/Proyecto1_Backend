@@ -31,10 +31,37 @@ export async function createRestaurant(req, res) {
 //Retornar datos según la _id
 export async function getRestaurantbyId(req, res) {
     try {
-        const restaurante = await Restaurante.findOne({ _id: req.params._id, activo: true });
+
+        const { idAdministrador } = req.query;
+
+        const restaurante = await Restaurante
+            .findOne({ _id: req.params._id, activo: true })
+            .populate('pedidos')
+            .populate('productos');
+        const productosByCat = groupBy(restaurante.productos, 'categoria')
 
         if (!restaurante) return res.status(404).json({ message: 'No se encontró restaurante con esa ID o está inhabilitado' });
-        res.status(200).json(restaurante);
+
+        if (idAdministrador != null) {
+            const usuario = await Usuario.findById(idAdministrador);
+            if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+            if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede ver los pedidos.' });
+        }
+
+        let restauranteForAdmin
+        if (restaurante.idAdministrador.toString() !== idAdministrador)
+            restauranteForAdmin = { ...restaurante._doc, pedidos: [] }
+        else restauranteForAdmin = {
+            ...restaurante._doc,
+            pedidos: restaurante.pedidos
+                .filter(ped => ped.estado !== 'Creado')
+                .filter(ped => ped.estado !== 'Realizado')
+        }
+
+        res.status(200).json({
+            ...restauranteForAdmin,
+            productosByCat
+        });
     } catch (err) {
         res.status(500).json({ message: 'Error al obtener el restaurante' });
     }
@@ -49,29 +76,36 @@ export async function getRestaurantbyNameorCats(req, res) {
         if (categoria) query.categoria = categoria;
         if (nombre) query.nombre = { $regex: `${nombre}`, $options: 'i' }; //${nombre} exp regular para búsqueda no estricta, $options: 'i' para que la búsqueda no tenga en cuenta si hay mayúsculas o minúsculas 
 
-        const restaurantes = await Restaurante.find(query);
+        const restaurantes = await Restaurante
+            .find(query)
+            .populate('pedidos')
+            .populate('productos');
 
-        const pedidos = await Promise.all(
-            restaurantes.map(async rest => await Pedido.find({ idRestaurante: rest._id.toString() }))
-        )  
-        
-        const pedidosRealizados = pedidos.flat().filter(ped => ped.estado === 'Realizado');
-        const pedidosAgrupados = groupBy(pedidosRealizados, 'idRestaurante');
-        Object.entries(pedidosAgrupados).sort((pedA, pedB) => pedB.length - pedA.length);
+        const restsByPedido = restaurantes.map(rest => {
+            const pedidosRealizados = rest.pedidos.filter(ped => ped.estado === 'Realizado').length
+            const restaurante = { ...rest._doc, pedidos: pedidosRealizados }
+            return [restaurante, pedidosRealizados]
+        })
+
+        // Posición 0: Restaurante
+        // Posición 1: Cantidad de pedidos Realizados
+        const restaurantesOrdenados = restsByPedido
+            .sort((restA, restB) => restB[1] - restA[1])
+            .map(pair => pair[0])
 
         if (!restaurantes.length) return res.status(404).json({ message: 'No se encontraron restaurantes con los datos proveídos' });
-        res.status(200).json(restaurantes);
+        res.status(200).json(restaurantesOrdenados);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 }
 
-const groupBy = function(array, key) {
-    return array.reduce(function(acc, actual) {
-      (acc[actual[key]] = acc[actual[key]] || []).push(actual);
-      return acc;
+const groupBy = function (array, key) {
+    return array.reduce(function (acc, actual) {
+        (acc[actual[key]] = acc[actual[key]] || []).push(actual);
+        return acc;
     }, {});
-  };
+};
 
 // Modificar los datos del restaurante según su _id
 const catgs = ['Comida ejecutiva', 'Comida rápida', 'Comida asiática', 'Comida vegana/vegetariana', 'Comida gourmet', 'Cafetería', 'Comida de mar'];

@@ -140,11 +140,11 @@ export async function putPedido(req, res) {
         if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
         if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede modificar el pedido.' });
         if (usuario.rol !== 'Cliente') return res.status(403).json({ message: 'No se puede modificar el pedido, el usuario no tiene rol de Cliente.' });
-        if(pedido.idUsuario.toString() !== idUsuario) return res.status(403).json({ message: 'No se puede modificar el pedido porque el usuario no es el dueño del mismo.' });
+        if (pedido.idUsuario.toString() !== idUsuario) return res.status(403).json({ message: 'No se puede modificar el pedido porque el usuario no es el dueño del mismo.' });
 
         const restaurante = await Restaurante.findById(pedido.idRestaurante);
         if (!restaurante.activo) return res.status(400).json({ message: 'El restaurante no está activo, no se puede modificar el pedido.' });
-        
+
         const prodsbyID = await Producto.find({ idRestaurante: restaurante._id });
         const prodsRestaurante = prodsbyID.map(p => p.nombre);
         const prodsNoEncontrados = productos.filter(p => !prodsRestaurante.includes(p.nombre));
@@ -187,7 +187,7 @@ export async function deletePedido(req, res) {
         if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
         if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede inhabilitar el pedido.' });
         if (usuario.rol !== 'Cliente') return res.status(403).json({ message: 'No se puede inhabilitar el pedido, el usuario no tiene rol de Cliente.' });
-        if(pedido.idUsuario.toString() !== idUsuario) return res.status(403).json({ message: 'No se puede inhabilitar el pedido porque el usuario no es el dueño del mismo.' });
+        if (pedido.idUsuario.toString() !== idUsuario) return res.status(403).json({ message: 'No se puede inhabilitar el pedido porque el usuario no es el dueño del mismo.' });
 
         pedido.activo = false;
         await pedido.save();
@@ -212,12 +212,12 @@ export async function enablePedido(req, res) {
 
         const pedido = await Pedido.findById(_id);
         if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' })
-        
+
         const usuario = await Usuario.findById(idUsuario);
         if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
         if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede habilitar el pedido.' });
         if (usuario.rol !== 'Cliente') return res.status(403).json({ message: 'No se puede habilitar el pedido, el usuario no tiene rol de Cliente.' });
-        if(pedido.idUsuario.toString() !== idUsuario) return res.status(403).json({ message: 'No se puede habilitar el pedido porque el usuario no es el dueño del mismo.' });
+        if (pedido.idUsuario.toString() !== idUsuario) return res.status(403).json({ message: 'No se puede habilitar el pedido porque el usuario no es el dueño del mismo.' });
 
         pedido.activo = true;
         await pedido.save();
@@ -231,5 +231,56 @@ export async function enablePedido(req, res) {
         res.status(200).json({ message: 'El pedido fue habilitado.' });
     } catch (err) {
         res.status(500).json({ message: 'Error al habilitar el pedido.' });
+    }
+}
+
+//Cambios de estado de pedidos
+export async function putStateChanges(req, res) {
+    try {
+        const { idUsuario, estado } = req.body;
+
+        const pedido = await Pedido.findById(req.params._id);
+        if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' })
+        if (!pedido.activo) return res.status(400).json({ message: 'El pedido no está activo, no puede modificar.' });
+
+        const usuario = await Usuario.findById(idUsuario);
+        if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
+        if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede modificar el pedido.' });
+
+        const restaurante = await Restaurante.findById(pedido.idRestaurante);
+        if (!restaurante.activo) return res.status(400).json({ message: 'El restaurante no está activo, no se puede modificar el pedido.' });
+
+        if (usuario.rol === 'Cliente') {
+            if (pedido.idUsuario.toString() !== idUsuario) return res.status(403).json({ message: 'No se puede modificar el pedido porque el usuario no es el dueño del mismo.' });
+            if (pedido.estado === 'Creado' && estado === 'Enviado') {
+                pedido.estado = estado;
+            }
+        } else if (usuario.rol === 'Domiciliario') {
+            if (pedido.estado === 'Enviado' && estado === 'Aceptado') {
+                pedido.idDomiciliario = idUsuario;
+                pedido.estado = estado;
+            } else if (
+                pedido.estado === 'Recibido' &&
+                estado === 'En dirección' &&
+                pedido.idDomiciliario === idUsuario
+            ) {
+                pedido.estado = estado;
+            } else if (
+                pedido.estado === 'En dirección' &&
+                estado === 'Realizado' &&
+                pedido.idDomiciliario === idUsuario
+            ) {
+                pedido.estado = estado;
+            }
+        } else if (usuario.rol === 'Administrador') {
+            if (restaurante.idAdministrador.toString() !== idUsuario) return res.status(403).json({ message: 'No se puede modificar el pedido porque el usuario no es el Administrador del restaurante.' });
+            if (pedido.estado === 'Aceptado' && estado === 'Recibido') {
+                pedido.estado = estado;
+            }
+        }
+        await pedido.save();
+        res.status(200).json(pedido);
+    } catch (err) {
+        res.status(500).json({ message: 'Error al actualizar el pedido.' });
     }
 }

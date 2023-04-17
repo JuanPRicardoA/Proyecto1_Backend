@@ -1,4 +1,4 @@
-import { createPedido, getPedidoById, getPedidos, getPedidosEnviados, putPedido, deletePedido, enablePedido } from './Pedido.controller';
+import { createPedido, getPedidoById, getPedidos, getPedidosEnviados, putPedido, deletePedido, enablePedido, putStateChanges } from './Pedido.controller';
 import { Router } from 'express';
 const router = Router();
 
@@ -22,5 +22,8 @@ router.delete('/pedidos/:_id', deletePedido);
 
 // Endpoint PUT
 router.put('/pedidos/habilitar/:_id', enablePedido);
+
+// Endpoint PUT
+router.put('/pedidos/estado/:_id', putStateChanges)
 
 export default router;
