@@ -32,7 +32,7 @@ export async function createRestaurant(req, res) {
 export async function getRestaurantbyId(req, res) {
     try {
 
-        const { idAdministrador } = req.query;
+        const { idAdministrador, dia, mes, semana } = req.query;
 
         const restaurante = await Restaurante
             .findOne({ _id: req.params._id, activo: true })
@@ -46,6 +46,46 @@ export async function getRestaurantbyId(req, res) {
             const usuario = await Usuario.findById(idAdministrador);
             if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
             if (!usuario.activo) return res.status(400).json({ message: 'El usuario no está activo, no puede ver los pedidos.' });
+        }
+
+        if (dia || mes || semana) {
+            if (restaurante.idAdministrador.toString() === idAdministrador) {
+                const pedidosRealizados = restaurante.pedidos.filter(ped => ped.estado === 'Realizado');
+                let pedidosbyfecha;
+                if (dia) {
+                    const dia0 = new Date(dia);
+                    pedidosbyfecha = pedidosRealizados.filter(ped => {
+                        const fechaCreado = new Date(ped.createdAt);
+                        return fechaCreado.getDate() === dia0.getDate()
+                            && fechaCreado.getMonth() === dia0.getMonth()
+                            && fechaCreado.getFullYear() === dia0.getFullYear()
+                    });
+                }
+                if (mes >= 1 && mes <= 12) {
+                    const mes0 = new Date(`2023-${mes}`);
+                    pedidosbyfecha = pedidosRealizados.filter(ped => {
+                        const fechaCreado = new Date(ped.createdAt);
+                        return fechaCreado.getMonth() === mes0.getMonth()
+                            && fechaCreado.getFullYear() === mes0.getFullYear()
+                    });
+                }
+                if (semana >= 1 && semana <= 52) {
+                    const dias = semana * 7;
+                    const finsemana = new Date('2023-01-01');
+                    finsemana.setDate(finsemana.getDate() + dias);
+                    const iniciosemana = new Date(finsemana);
+                    iniciosemana.setDate(iniciosemana.getDate() - 7);
+                    pedidosbyfecha = pedidosRealizados.filter(ped => {
+                        const fechaCreado = new Date(ped.createdAt);
+                        return fechaCreado >= iniciosemana && fechaCreado <= finsemana
+                    });
+                }
+                return res.status(200).json({
+                    ...restaurante._doc,
+                    pedidos: pedidosbyfecha,
+                    productosByCat
+                })
+            }
         }
 
         let restauranteForAdmin

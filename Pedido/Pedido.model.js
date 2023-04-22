@@ -13,6 +13,8 @@ const pedidoSchema = mongoose.Schema({
     idUsuario: { type: String, required: [true, "El ID del usuario es obligatorio."] },
     idDomiciliario: { type: String, default: "" },
     valorTotal: { type: Number },
+    distanceRestClient: { type: String },
+    distanceRestDeliv: { type: String },
     activo: { type: Boolean, default: true }
 }, { timestamps: true });
 

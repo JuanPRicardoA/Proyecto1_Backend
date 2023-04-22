@@ -39,7 +39,8 @@ export async function createPedido(req, res) {
 
         const idRestaurante = restaurante._id;
         const direccion = usuario.direccion;
-        const pedido = new Pedido({ idUsuario, direccion, idRestaurante, productos: newproductos, valorTotal });
+        const distanceRestClient = `${Math.floor(Math.random() * 1000) + 1} metros`
+        const pedido = new Pedido({ idUsuario, direccion, idRestaurante, productos: newproductos, valorTotal, distanceRestClient });
 
         restaurante.pedidos.push(pedido);
         const resultado = await pedido.save();
@@ -116,9 +117,32 @@ export async function getPedidos(req, res) {
 //Retornar datos de los pedidos enviados, pero sin aceptar
 export async function getPedidosEnviados(req, res) {
     try {
+        const { filtro } = req.query;
+
+        const distanceRestClientRegex = /(\d+) metros/;
         const pedidosEnviados = await Pedido.find({ estado: 'Enviado', activo: true });
         if (!pedidosEnviados.length) {
             return res.status(404).json({ message: 'No se encontraron pedidos enviados.' });
+        }
+
+        if (filtro === 'Vejez') pedidosEnviados.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        if (filtro === 'distanceRestClient') {
+            pedidosEnviados.sort((a, b) => {
+                const aDistance = parseInt(a.distanceRestClient.match(distanceRestClientRegex)[1]);
+                const bDistance = parseInt(b.distanceRestClient.match(distanceRestClientRegex)[1]);
+                return aDistance - bDistance;
+            });
+        }
+        if (filtro === 'distanceRestDeliv') {
+            pedidosEnviados.forEach(pedido => {
+                const distanceRestDeliv = `${Math.floor(Math.random() * 1000) + 1} metros`
+                Object.assign(pedido, { distanceRestDeliv });
+            });
+            pedidosEnviados.sort((a, b) => {
+                const aDistance = parseInt(a.distanceRestDeliv.match(distanceRestClientRegex)[1]);
+                const bDistance = parseInt(b.distanceRestDeliv.match(distanceRestClientRegex)[1]);
+                return aDistance - bDistance;
+            })
         }
         res.status(200).json(pedidosEnviados);
     } catch (error) {

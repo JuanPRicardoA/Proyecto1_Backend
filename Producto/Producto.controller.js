@@ -31,7 +31,7 @@ export async function createProduct(req, res) {
             await restaurante.save();
         } else {
             return res.status(403).json({ message: 'No se puede crear el producto porque ya existe.' })
-        } 
+        }
 
         const catexiste = restaurante.categorias.find(cat => cat === categoria);
         if (!catexiste) {
