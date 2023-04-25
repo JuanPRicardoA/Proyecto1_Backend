@@ -20,7 +20,7 @@ export async function createPedido(req, res) {
         if (usuario.rol !== 'Cliente') return res.status(403).json({ message: 'No se puede crear el pedido, el usuario no tiene rol de cliente.' });
         if (!usuario.activo) return res.status(403).json({ message: 'No se puede crear el pedido, el usuario no está activo.' });
 
-        const prodsbyID = await Producto.find({ idRestaurante: restaurante._id });
+        const prodsbyID = await Producto.find({ idRestaurante: restaurante._id, activo: true });
         const prodsRestaurante = prodsbyID.map(p => p.nombre);
         const prodsNoEncontrados = productos.filter(p => !prodsRestaurante.includes(p.nombre));
 
@@ -71,6 +71,7 @@ export async function getPedidoById(req, res) {
 
 //Retorna datos de pedidos REALIZADOS por un usuario (domiciliario), ENVÍADOS por un usuario (cliente)
 //PEDIDO a un restaurante y/o entre las fechas dadas
+//Formato fechaInicio, fechaFin: DD/MM/AAAA hh:mm:ss
 export async function getPedidos(req, res) {
     try {
         const { idUsuario, idDomiciliario, idRestaurante, fechaInicio, fechaFin, estado } = req.query;
@@ -151,7 +152,7 @@ export async function getPedidosEnviados(req, res) {
     }
 }
 
-//Modificar los datos del pedido según su _id
+//Modificar los datos del pedido según su _id, a menos que este ya haya sido enviado.
 export async function putPedido(req, res) {
     try {
         const { idUsuario, productos } = req.body;
@@ -159,6 +160,7 @@ export async function putPedido(req, res) {
         const pedido = await Pedido.findById(req.params._id);
         if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' })
         if (!pedido.activo) return res.status(400).json({ message: 'El pedido no está activo, no puede modificar.' });
+        if (pedido.estado !== 'Creado') return res.status(403).json({ message: 'No se puede modificar el pedido, ya se envió.' });
 
         const usuario = await Usuario.findById(idUsuario);
         if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
@@ -205,7 +207,7 @@ export async function deletePedido(req, res) {
 
         const pedido = await Pedido.findById(_id);
         if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' })
-        if (!pedido.activo) return res.status(400).json({ message: 'El pedido no está activo, no puede modificar.' });
+        if (!pedido.activo) return res.status(400).json({ message: 'El pedido no está activo, no se puede modificar.' });
 
         const usuario = await Usuario.findById(idUsuario);
         if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' })
@@ -278,28 +280,33 @@ export async function putStateChanges(req, res) {
             if (pedido.idUsuario.toString() !== idUsuario) return res.status(403).json({ message: 'No se puede modificar el pedido porque el usuario no es el dueño del mismo.' });
             if (pedido.estado === 'Creado' && estado === 'Enviado') {
                 pedido.estado = estado;
+                console.log('Pedido enviado')
             }
         } else if (usuario.rol === 'Domiciliario') {
             if (pedido.estado === 'Enviado' && estado === 'Aceptado') {
                 pedido.idDomiciliario = idUsuario;
                 pedido.estado = estado;
+                console.log('Pedido aceptado')
             } else if (
                 pedido.estado === 'Recibido' &&
                 estado === 'En dirección' &&
                 pedido.idDomiciliario === idUsuario
             ) {
                 pedido.estado = estado;
+                console.log('Pedido en dirección')
             } else if (
                 pedido.estado === 'En dirección' &&
                 estado === 'Realizado' &&
                 pedido.idDomiciliario === idUsuario
             ) {
                 pedido.estado = estado;
+                console.log('Pedido realizado')
             }
         } else if (usuario.rol === 'Administrador') {
             if (restaurante.idAdministrador.toString() !== idUsuario) return res.status(403).json({ message: 'No se puede modificar el pedido porque el usuario no es el Administrador del restaurante.' });
             if (pedido.estado === 'Aceptado' && estado === 'Recibido') {
                 pedido.estado = estado;
+                console.log('Pedido recibido')
             }
         }
         await pedido.save();

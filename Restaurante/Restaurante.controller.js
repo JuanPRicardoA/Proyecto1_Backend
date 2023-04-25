@@ -29,6 +29,9 @@ export async function createRestaurant(req, res) {
 }
 
 //Retornar datos según la _id
+//Pedidos en curso: estado = Enviado, Aceptado, Recibido, En dirección
+//Pedidos realizados: estado = Realizado
+//Formato día: AAAA-MM-DD
 export async function getRestaurantbyId(req, res) {
     try {
 
@@ -151,7 +154,7 @@ const groupBy = function (array, key) {
 const catgs = ['Comida ejecutiva', 'Comida rápida', 'Comida asiática', 'Comida vegana/vegetariana', 'Comida gourmet', 'Cafetería', 'Comida de mar'];
 export async function putRestaurant(req, res) {
     try {
-        const { catg, idAdministrador } = req.body;
+        const { categoria, idAdministrador } = req.body;
         const rest0 = await Restaurante.findById(req.params._id)
         if (!rest0.activo) return res.status(400).json({ message: 'El restaurante no está activo, no se puede modificar' });
 
@@ -161,7 +164,7 @@ export async function putRestaurant(req, res) {
         if (usuario.rol !== 'Administrador') return res.status(403).json({ message: 'No se puede modificar el restaurante, el usuario no tiene rol de Administrador.' });
         if (rest0.idAdministrador.toString() !== idAdministrador) return res.status(403).json({ message: 'No se puede modificar el restaurante porque el usuario no es Administrador de este restaurante' });
 
-        if (catg && !catgs.includes(catg)) return res.status(400).json({ message: 'Categoría no válida' });
+        if (categoria && !catgs.includes(categoria)) return res.status(400).json({ message: 'Categoría no válida' });
 
         const restaurante = await Restaurante.findByIdAndUpdate(req.params._id, req.body, { new: true });
 

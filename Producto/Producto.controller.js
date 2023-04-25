@@ -71,11 +71,15 @@ export async function getProductosByRestauranteCategoria(req, res) {
         const { nombreRestaurante, categoria } = req.query;
         const query = { activo: true };
 
-        if (categoria) query.categoria = categoria;
+        if (categoria) {
+            const restaurante = await Restaurante.findOne({ categorias: { $in: [categoria] }, activo: true });
+            if (!restaurante) return res.status(404).json({ message: 'No se puede obtener productos, el restaurante no está activo.' });
+            query.categoria = categoria;
+        }
         if (nombreRestaurante) {
-            query.nombreRestaurante = nombreRestaurante;
             const restaurante = await Restaurante.findOne({ nombre: nombreRestaurante });
             if (!restaurante.activo) return res.status(403).json({ message: 'No se puede obtener productos, el restaurante no está activo.' });
+            query.idRestaurante = restaurante._id;
         }
 
         const productos = await Producto.find(query);
